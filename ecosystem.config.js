@@ -2,7 +2,7 @@ module.exports = {
     apps: [
         {
             name: 'OnealBackend',
-            script: './dist/server.js',
+            script: './dist/index.js',
             cwd: '/var/www/onealBackend',
             instances: 1,
             exec_mode: 'fork',
