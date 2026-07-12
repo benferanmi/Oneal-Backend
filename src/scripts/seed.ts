@@ -1,11 +1,12 @@
 /**
- * Seed script — creates the initial admin user and the initial service catalog.
+ * Seed script — creates the initial admin user, the initial service catalog, and testimonials.
  * Run with: npm run seed
  */
 import { connectDatabase, disconnectDatabase } from "../config/database";
 import { AdminAuthService } from "../services/AdminAuthService";
 import { AdminUserRepository } from "../repositories/AdminUserRepository";
 import { ServiceRepository } from "../repositories/ServiceRepository";
+import { Testimonial } from "../models/Testimonial";
 import { env } from "../config/env";
 import { CreateServiceInput } from "../types/models";
 import { logger } from "../logger";
@@ -41,55 +42,65 @@ const INITIAL_SERVICES: CreateServiceInput[] = [
     displayOrder: 20,
   },
   {
-    slug: "windshield-ceramic-coating",
-    name: "Windshield Ceramic Coating",
-    shortDescription: "Current special — hydrophobic ceramic windshield coating.",
-    fullDescription:
-      "Professional-grade ceramic coating applied to your windshield for improved visibility in rain, easier bug and grime removal, and longer wiper life.",
-    category: "addon",
-    priceType: "fixed",
-    price: 120,
-    isActive: true,
-    isFeatured: true,
-    displayOrder: 5,
-  },
-  {
-    slug: "full-ceramic-coating",
-    name: "Full Ceramic Coating",
-    shortDescription: "Whole-vehicle long-lasting ceramic paint protection.",
-    fullDescription:
-      "Multi-layer ceramic coating over paint correction. Long-lasting gloss, hydrophobic finish, and paint protection against UV and contaminants.",
-    category: "premium",
-    priceType: "quote_only",
-    isActive: false,
-    isFeatured: false,
-    displayOrder: 30,
-  },
-  {
     slug: "buffing-polishing",
     name: "Buffing & Polishing",
-    shortDescription: "Machine polish to remove swirl marks and light scratches.",
-    fullDescription:
-      "Multi-stage machine polishing to remove swirl marks, oxidation, and light scratches, restoring depth and clarity to your paint.",
+    shortDescription: "Multi-stage paint correction — coming soon.",
+    fullDescription: "Machine buffing and polishing to remove swirl marks and light oxidation, restoring depth and clarity to the paint. Pricing available on request once launched.",
     category: "premium",
     priceType: "quote_only",
+    image: "https://images.unsplash.com/photo-1620584898989-d39f7f9ed1b7?auto=format&fit=crop&w=1200&q=80",
     isActive: false,
     isFeatured: false,
-    displayOrder: 40,
+    displayOrder: 20,
+  },
+  {
+    slug: "ceramic-coating",
+    name: "Ceramic Coating",
+    shortDescription: "Full-body ceramic coating — coming soon.",
+    fullDescription: "A full-body hydrophobic ceramic layer for long-term gloss, UV resistance, and easier washing. Pricing available on request once launched.",
+    category: "premium",
+    priceType: "quote_only",
+    image: "https://images.unsplash.com/photo-1719119985017-80108e084bc0?auto=format&fit=crop&w=1200&q=80",
+    isActive: false,
+    isFeatured: false,
+    displayOrder: 21,
   },
   {
     slug: "headlight-restoration",
     name: "Headlight Restoration",
-    shortDescription: "Restore cloudy, yellowed headlights to like-new clarity.",
-    fullDescription:
-      "Sanding, polishing, and UV-sealing your headlights to remove yellowing and oxidation for safer nighttime driving and a fresher look.",
+    shortDescription: "Clarity restoration for oxidized headlights — coming soon.",
+    fullDescription: "Wet-sanding and polishing to clear cloudy, UV-oxidized headlight lenses, restoring visibility and a cleaner look. Pricing available on request once launched.",
     category: "addon",
-    priceType: "fixed",
-    price: 90,
+    priceType: "quote_only",
+    image: "https://images.unsplash.com/photo-1631856507219-d1f3465b4884?auto=format&fit=crop&w=1200&q=80",
     isActive: false,
     isFeatured: false,
-    displayOrder: 50,
+    displayOrder: 22,
+  }
+];
+
+const INITIAL_TESTIMONIALS = [
+  { 
+    name: "John D.", 
+    rating: 5, 
+    content: "Absolutely stunning work on my F-150. Looks better than when I drove it off the lot.",
+    isPublished: true,
+    displayOrder: 1
   },
+  { 
+    name: "Sarah W.", 
+    rating: 5, 
+    content: "The mobile unit is so convenient. They detailed my car while I was working from home.",
+    isPublished: true,
+    displayOrder: 2
+  },
+  { 
+    name: "Mike R.", 
+    rating: 5, 
+    content: "Three generations of experience really shows. Their ceramic coating is flawless.",
+    isPublished: true,
+    displayOrder: 3
+  }
 ];
 
 async function seed() {
@@ -113,11 +124,23 @@ async function seed() {
   for (const svc of INITIAL_SERVICES) {
     const existing = await ServiceRepository.findBySlug(svc.slug);
     if (existing) {
-      logger.info(`Service already exists: ${svc.slug}`);
-      continue;
+      logger.info(`Service already exists: ${svc.slug}, updating...`);
+      // Update it in case the user wants to overwrite with the new format/images
+      Object.assign(existing, svc);
+      await existing.save();
+    } else {
+      await ServiceRepository.create(svc as never);
+      logger.info(`Created service: ${svc.slug}`);
     }
-    await ServiceRepository.create(svc as never);
-    logger.info(`Created service: ${svc.slug}`);
+  }
+
+  // Testimonials
+  const existingTestimonials = await Testimonial.countDocuments();
+  if (existingTestimonials === 0) {
+    await Testimonial.insertMany(INITIAL_TESTIMONIALS);
+    logger.info(`Created ${INITIAL_TESTIMONIALS.length} testimonials`);
+  } else {
+    logger.info(`Testimonials already seeded (${existingTestimonials} found)`);
   }
 
   await disconnectDatabase();
