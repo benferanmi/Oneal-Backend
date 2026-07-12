@@ -25,8 +25,11 @@ export type LeadStatus = (typeof LEAD_STATUSES)[number];
 export const SERVICE_CATEGORIES = ["standard", "premium", "addon"] as const;
 export type ServiceCategory = (typeof SERVICE_CATEGORIES)[number];
 
-export const PRICE_TYPES = ["fixed", "starting_at", "quote_only"] as const;
+export const PRICE_TYPES = ["fixed", "starting_at", "quote_only", "variable", "range"] as const;
 export type PriceType = (typeof PRICE_TYPES)[number];
+
+export const VEHICLE_TYPES = ["car", "truck_suv", "van_large"] as const;
+export type VehicleType = (typeof VEHICLE_TYPES)[number];
 
 export const VEHICLE_SIZES = ["sedan", "coupe", "suv", "truck", "van", "other"] as const;
 export type VehicleSize = (typeof VEHICLE_SIZES)[number];
@@ -72,6 +75,7 @@ export interface VehicleInfo {
   year: number;
   color?: string;
   size?: VehicleSize;
+  type?: VehicleType;
 }
 
 export interface LeadPhoto {
@@ -117,6 +121,16 @@ export type UpdateLeadInput = Partial<
 
 /* ---------------------------------------------------------------------------- CORE ENTITY: SERVICE -------------------------------------------------------------------------- */
 
+export interface PriceOption {
+  id: string;
+  label: string;
+  priceType: PriceType;
+  price?: number;
+  priceMin?: number;
+  priceMax?: number;
+  vehicleType?: VehicleType;
+}
+
 export interface Service {
   id: string;
   slug: string;
@@ -126,6 +140,11 @@ export interface Service {
   category: ServiceCategory;
   priceType: PriceType;
   price?: number;
+  priceMin?: number;
+  priceMax?: number;
+  priceNote?: string;
+  hasVehicleTypeVariation?: boolean;
+  priceOptions?: PriceOption[];
   durationNote?: string;
   durationMinutesMin?: number;
   durationMinutesMax?: number;
@@ -140,6 +159,42 @@ export interface Service {
 
 export type CreateServiceInput = Omit<Service, "id" | "createdAt" | "updatedAt">;
 export type UpdateServiceInput = Partial<CreateServiceInput>;
+
+/* ---------------------------------------------------------------------------- PRICING HELPER FUNCTIONS -------------------------------------------------------------------------- */
+
+export function getPriceForVehicleType(service: Service, vehicleType?: VehicleType): PriceOption | undefined {
+  if (!service.hasVehicleTypeVariation || !service.priceOptions) return undefined;
+  return service.priceOptions.find(opt => opt.vehicleType === vehicleType);
+}
+
+export function formatPriceOption(option?: PriceOption): string {
+  if (!option) return "Quote Only";
+  if (option.priceType === "fixed" && option.price !== undefined) return `$${option.price}`;
+  if (option.priceType === "range" && option.priceMin !== undefined && option.priceMax !== undefined) {
+    return `$${option.priceMin} - $${option.priceMax}`;
+  }
+  if (option.priceType === "starting_at" && option.price !== undefined) {
+    return `From $${option.price}`;
+  }
+  return "Quote Only";
+}
+
+export function formatServiceCardPrice(service: Service): string {
+  if (service.hasVehicleTypeVariation && service.priceOptions?.length) {
+    const prices = service.priceOptions
+      .map(opt => opt.priceMin ?? opt.price)
+      .filter((p): p is number => p !== undefined);
+    if (prices.length > 0) {
+      const minPrice = Math.min(...prices);
+      return `From $${minPrice}`;
+    }
+  }
+  if (service.priceType === "fixed" && service.price !== undefined) return `$${service.price}`;
+  if (service.priceType === "range" && service.priceMin !== undefined && service.priceMax !== undefined) return `$${service.priceMin} - $${service.priceMax}`;
+  if (service.priceType === "variable" && service.price !== undefined) return `From $${service.price}`;
+  if (service.priceType === "starting_at" && service.price !== undefined) return `From $${service.price}`;
+  return "Quote Only";
+}
 
 /* ---------------------------------------------------------------------------- CORE ENTITY: GALLERY ITEM -------------------------------------------------------------------------- */
 

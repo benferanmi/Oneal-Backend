@@ -3,6 +3,7 @@ import {
   LEAD_STATUSES,
   LEAD_SOURCES,
   VEHICLE_SIZES,
+  VEHICLE_TYPES,
   Lead as LeadType,
 } from "../types/models";
 
@@ -27,6 +28,7 @@ const VehicleSchema = new Schema(
     year: { type: Number, required: true },
     color: String,
     size: { type: String, enum: VEHICLE_SIZES },
+    type: { type: String, enum: VEHICLE_TYPES },
   },
   { _id: false }
 );
