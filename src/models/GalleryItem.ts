@@ -6,8 +6,9 @@ export interface GalleryItemDoc extends Omit<GalleryItemType, "id">, Document {}
 const GalleryItemSchema = new Schema(
   {
     title: String,
+    mediaType: { type: String, enum: ["image", "video"], default: "image" },
     beforeImage: { type: String, required: true },
-    afterImage: { type: String, required: true },
+    afterImage: { type: String },
     caption: String,
     relatedServiceId: String,
     isPublished: { type: Boolean, default: true, index: true },

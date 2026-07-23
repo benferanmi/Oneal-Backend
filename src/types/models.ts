@@ -201,8 +201,9 @@ export function formatServiceCardPrice(service: Service): string {
 export interface GalleryItem {
   id: string;
   title?: string;
+  mediaType: "image" | "video";
   beforeImage: string;
-  afterImage: string;
+  afterImage?: string;
   caption?: string;
   relatedServiceId?: string;
   isPublished: boolean;
